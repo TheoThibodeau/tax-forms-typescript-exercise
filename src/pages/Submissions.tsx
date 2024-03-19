@@ -14,6 +14,7 @@ import {
 
 import { useAppSelector } from "../lib/useAppSelector";
 import { selectSubmissions } from "../redux/submissions";
+import dayjs from 'dayjs';
 
 export default function Submissions() {
   const submissions = useAppSelector(selectSubmissions);
@@ -29,6 +30,7 @@ export default function Submissions() {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>Submitted At</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Address</TableCell>
                 <TableCell>City</TableCell>
@@ -44,6 +46,7 @@ export default function Submissions() {
 
                 return (
                   <TableRow key={submission.id}>
+                    <TableCell>{dayjs(submission.createdAt).format('M/D/YYYY h:mm:ss A')}</TableCell>
                     <TableCell>{listing.name}</TableCell>
                     <TableCell>{listing.physicalAddress.address1}</TableCell>
                     <TableCell>{listing.physicalAddress.city}</TableCell>

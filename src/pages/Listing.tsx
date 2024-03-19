@@ -4,13 +4,16 @@ import { Formik, Form, useField } from "formik";
 import { Box, Button, Container, Grid, Paper, TextField, Typography } from "@mui/material";
 
 import { selectClaimedListingById } from "../redux/listings";
-import { useAppSelector } from "../lib/useAppSelector";
 import { Submission } from "../lib/applicationTypes";
+import { requestExtension } from "../lib/api";
+import { useNavigate } from "react-router-dom";
+import { addSubmission } from '../redux/submissions'; 
+import { useAppSelector, useAppDispatch } from "../lib/useAppSelector";
+
 
 type AppFieldProps = {
   label: string;
   name: string;
-
   // This line allows you to pass any styling options to the MaterialUI text
   // field that are allowed by TextField.
   sx?: ComponentProps<typeof TextField>["sx"];
@@ -41,6 +44,10 @@ const AppField: React.FC<AppFieldProps> = ({
 export default function Listing() {
   const { id = null } = useParams();
   const listing = useAppSelector((state) => selectClaimedListingById(state, id))
+  const navigate = useNavigate(); // Initialize the useNavigate hook
+  const dispatch = useAppDispatch(); // Initialize the useAppDispatch hook
+
+
 
   if (!listing) {
     return (
@@ -52,6 +59,38 @@ export default function Listing() {
     listing,
   };
 
+  // Submission Object, API needs a Submission Object to populate the response from the server
+  let updatedValues: Submission;
+
+  // API call fires on the 'Submit' button click
+  const handleFormSubmit = (values: Submission) => {
+    updatedValues = {
+      listing: {
+        ...values.listing,
+        },
+        reason: values.reason || "",
+      };
+      handleExtensionClick(updatedValues) 
+    };
+  
+
+  // API call to requestExtension
+  const handleExtensionClick = async (updatedValues: Submission) => {
+    try {
+      if (!updatedValues.reason) {
+        alert("Reason for filing is required"); // Alert the user if the reason field is empty
+        return;
+      }
+      const response = await requestExtension(updatedValues); // Takes the new values written by the User and POSTS those to the API endpoint
+      console.log('Extension request submitted:', response);
+      dispatch(addSubmission(response)); // Adds the recent submission to the submission slice in the redux file
+      navigate("/submissions"); // Navigates the user to the Submission page after the 'Submit' button is clicked
+    } catch (error) {
+      console.error('Error submitting extension request:', error);
+    }
+  };
+
+
   return (
     <Container sx={{ mt: 2 }}>
       <Paper sx={{ p: 5, mt: 2 }}>
@@ -60,8 +99,11 @@ export default function Listing() {
         </Typography>
 
         <Formik
-          initialValues={initialValues}
-          onSubmit={() => {}}
+          initialValues={{
+            listing,
+            reason: ""
+          }}
+          onSubmit={handleFormSubmit}
         >
           <Form>
             <AppField label="Name" name="listing.name" />
@@ -142,7 +184,20 @@ export default function Listing() {
             </Box>
 
             <Box sx={{ mt: 3 }}>
-              <Button variant="contained" type="submit">
+              <Typography variant="h6">
+                Reason for filing
+              </Typography>
+              <Grid item xs={2}>
+                <AppField
+                  label="Reason for filing extension"
+                  name="reason"
+                />
+              </Grid>
+              <br />
+              <Button 
+                variant="contained" 
+                type="submit"
+              >
                 Submit Request
               </Button>
             </Box>
